@@ -1,0 +1,14 @@
+
+
+Deterministic:
+
+Continuous nonlinear model -> linearize -> continuous linear model -> discretize -> discrete linear model
+
+
+Stochastic:
+
+Continuous stochastic nonlinear model -> linearize and sample at discrete times -> linear continuous-discrete model -> discretize SDE -> linear discrete model 
+
+
+For the stochastic model, we cannot simply add noise to the deterministic ODE, as this implies the noise properties are incorrect as sampling time decreases. Instead, we let the state follow a continuous-time SDE and sample at discrete times: this is the continuous-discrete model. Then we linearize this model and obtain the linear discrete stochastic model.
+
