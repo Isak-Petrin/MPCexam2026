@@ -69,38 +69,33 @@ z(:,N) = QuadrupleTankOutput(x(:,N),p);
 
 h = x./(rho*At);   % true levels [cm]
 
-%% Plots: inputs and realized disturbances
-figure('Name','2.2 inputs');
-subplot(2,2,1)
-stairs(tmin,u(1,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_1 [cm^3/s]'); title('Pump flow F_1'); grid on
-subplot(2,2,2)
-stairs(tmin,u(2,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_2 [cm^3/s]'); title('Pump flow F_2'); grid on
-subplot(2,2,3)
-stairs(tmin,d(1,:),'LineWidth',1.2); hold on
-stairs(tmin,dnom(1,:),'--','LineWidth',1.2)
-xlabel('time [min]'); ylabel('F_3 [cm^3/s]'); title('Disturbance F_3')
-legend('realized d_k','mean','Location','best'); grid on
-subplot(2,2,4)
-stairs(tmin,d(2,:),'LineWidth',1.2); hold on
-stairs(tmin,dnom(2,:),'--','LineWidth',1.2)
-xlabel('time [min]'); ylabel('F_4 [cm^3/s]'); title('Disturbance F_4')
-legend('realized d_k','mean','Location','best'); grid on
+%% Plots: inputs and outputs
+figure('Name','2.2 piecewise constant stochastic');
 
-%% Plots: outputs, noisy measurement vs true level
-figure('Name','2.2 outputs');
-subplot(2,2,1)
-plot(tmin,h(3,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_3 [cm]'); title('Tank 3 (unmeasured)'); grid on
-subplot(2,2,2)
-plot(tmin,h(4,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_4 [cm]'); title('Tank 4 (unmeasured)'); grid on
-subplot(2,2,3)
-plot(tmin,y(1,:),'-',tmin,h(1,:),'--','LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_1 [cm]'); title('Tank 1')
-legend('Noisy measurement y_1','True level','Location','best'); grid on
-subplot(2,2,4)
-plot(tmin,y(2,:),'-',tmin,h(2,:),'--','LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_2 [cm]'); title('Tank 2')
-legend('Noisy measurement y_2','True level','Location','best'); grid on
+subplot(3,1,1)
+stairs(tmin,u','LineWidth',1.2)
+ylabel('[cm^3/s]'); title('Pump flows u = [F_1; F_2]')
+legend('F_1','F_2','Location','best'); grid on
+
+subplot(3,1,2)
+stairs(tmin,d','LineWidth',1.2)
+hold on
+stairs(tmin,dnom','k--','LineWidth',1.0)
+ylabel('[cm^3/s]'); title('Disturbance flows d_k = mean + w_k')
+legend('F_3','F_4','mean','Location','best'); grid on
+
+subplot(3,1,3)
+plot(tmin,y','LineWidth',1.2)
+hold on
+plot(tmin,h(1:2,:)','k--','LineWidth',1.0)
+xlabel('time [min]'); ylabel('[cm]'); title('Measured levels y = g(x,p) + v')
+legend('y_1','y_2','true h_1, h_2','Location','best'); grid on
+
+%% Save figure to problem_2_4/plots
+plotdir = fullfile(here,'plots');
+if ~exist(plotdir,'dir')
+    mkdir(plotdir)
+end
+try, theme(gcf,'light'), catch, end   % report figures on white (R2025a+)
+exportgraphics(gcf,fullfile(plotdir,'sim_2_2_piecewise.png'),'Resolution',150)
+exportgraphics(gcf,fullfile(plotdir,'sim_2_2_piecewise.pdf'),'ContentType','vector')

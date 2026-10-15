@@ -1,4 +1,4 @@
-%% 3) Continuous-time linearization at steady state  % Slides 36-42
+%% 3 Continuous-time linearization at steady state  % Slides 36-42
 
 ap = [a1; a2; a3; a4];
 At = [A1; A2; A3; A4];
@@ -32,7 +32,7 @@ disp('D ='); disp(D)
 sys_c = ss(A,B,C,D);
 
 
-%% 4) Discrete-time linear model, Ts = 4 s  % Slides 51-54
+%% 4 Discrete-time linear model, Ts = 4 s  % Slides 51-54
 
 Ts = 4; % [s]
 nu = size(B,2);
@@ -54,7 +54,7 @@ disp('Dd ='); disp(Dd)
 sys_d = ss(Ad,Bd,Cd,Dd,Ts);
 
 
-%% 5) Linear step responses and comparison with nonlinear model
+%% 5 Linear step responses and comparison with nonlinear model
 
 zLIN = cell(size(stepPct));
 
@@ -105,7 +105,7 @@ for j = 1:length(stepPct)
 end
 
 
-%% 6) Continuous- and discrete-time transfer functions  % Slides 43-49 and 55-58
+%% 6 Continuous- and discrete-time transfer functions  % Slides 43-49 and 55-58
 
 Gc = tf(sys_c);
 Gd = tf(sys_d);
@@ -161,3 +161,4 @@ for iy = 1:2
         disp('Discrete poles ='); disp(pole(Gd_ij))
         disp('Discrete zeros ='); disp(zero(Gd_ij))
     end
+end

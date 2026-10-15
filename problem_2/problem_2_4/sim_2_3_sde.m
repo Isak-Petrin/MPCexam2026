@@ -106,3 +106,12 @@ subplot(2,2,4)
 plot(tmin,y(2,:),'-',tmin,h(2,:),'--','LineWidth',1.2)
 xlabel('time [min]'); ylabel('h_2 [cm]'); title('Tank 2')
 legend('Noisy measurement y_2','True level','Location','best'); grid on
+
+%% Save figure to problem_2_4/plots
+plotdir = fullfile(here,'plots');
+if ~exist(plotdir,'dir')
+    mkdir(plotdir)
+end
+try, theme(gcf,'light'), catch, end   % report figures on white (R2025a+)
+exportgraphics(gcf,fullfile(plotdir,'sim_2_3_sde.png'),'Resolution',150)
+exportgraphics(gcf,fullfile(plotdir,'sim_2_3_sde.pdf'),'ContentType','vector')

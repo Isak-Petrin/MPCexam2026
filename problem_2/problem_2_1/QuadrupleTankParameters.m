@@ -28,8 +28,18 @@ At = [A1; A2; A3; A4];
 us = [300; 300];   % [cm^3/s] nominal pump flows F1, F2  (Week 2 slide 35)
 ds = [ 50;  50];   % [cm^3/s] nominal disturbance flows F3, F4
 
-xs0 = 5000*ones(4,1);
-xs  = fsolve(@(x) QuadrupleTankProcess(0,x,us,ds,p), xs0, optimset('Display','off'));
+% Closed-form steady state (no toolbox needed). At steady state the
+% outflow of each tank equals its total inflow and qout_i = a_i*sqrt(2*g*h_i),
+% so h_i = (qout_i/a_i)^2/(2*g) and m_i = rho*A_i*h_i.
+qs = zeros(4,1);
+qs(3) = (1-gamma2)*us(2) + ds(1);      % tank 3: (1-gamma2)*F2 + F3
+qs(4) = (1-gamma1)*us(1) + ds(2);      % tank 4: (1-gamma1)*F1 + F4
+qs(1) = gamma1*us(1) + qs(3);          % tank 1: gamma1*F1 + outflow of tank 3
+qs(2) = gamma2*us(2) + qs(4);          % tank 2: gamma2*F2 + outflow of tank 4
+hs = (qs./ap).^2/(2*g);               % [cm]
+xs = rho*At.*hs;                       % [g]
+
+assert(norm(QuadrupleTankProcess(0,xs,us,ds,p)) < 1e-9, 'Steady state residual is not zero')
 ys  = QuadrupleTankSensor(xs,p);
 zs  = QuadrupleTankOutput(xs,p);
 

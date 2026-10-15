@@ -8,7 +8,6 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(here,'..','problem_2_1'));
 
 QuadrupleTankParameters   % p, us, ds, xs, ys, zs, At, rho, ...
-
 %% Time grid
 Ts     = 10;        % [s] sampling time of the simulation grid
 tfinal = 20*60;     % [s]
@@ -58,32 +57,29 @@ z(:,N) = QuadrupleTankOutput(x(:,N),p);
 
 h = x./(rho*At);   % all four levels [cm], for plotting only
 
-%% Plots: inputs and disturbances
-figure('Name','2.1 inputs');
-subplot(2,2,1)
-stairs(tmin,u(1,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_1 [cm^3/s]'); title('Pump flow F_1'); grid on
-subplot(2,2,2)
-stairs(tmin,u(2,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_2 [cm^3/s]'); title('Pump flow F_2'); grid on
-subplot(2,2,3)
-stairs(tmin,d(1,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_3 [cm^3/s]'); title('Disturbance F_3'); grid on
-subplot(2,2,4)
-stairs(tmin,d(2,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_4 [cm^3/s]'); title('Disturbance F_4'); grid on
+%% Plots: inputs and outputs
+figure('Name','2.1 deterministic');
 
-%% Plots: outputs
-figure('Name','2.1 outputs');
-subplot(2,2,1)
-plot(tmin,h(3,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_3 [cm]'); title('Tank 3'); grid on
-subplot(2,2,2)
-plot(tmin,h(4,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_4 [cm]'); title('Tank 4'); grid on
-subplot(2,2,3)
-plot(tmin,y(1,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_1 [cm]'); title('Tank 1 (y_1 = z_1)'); grid on
-subplot(2,2,4)
-plot(tmin,y(2,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_2 [cm]'); title('Tank 2 (y_2 = z_2)'); grid on
+subplot(3,1,1)
+stairs(tmin,u','LineWidth',1.2)
+ylabel('[cm^3/s]'); title('Pump flows u = [F_1; F_2]')
+legend('F_1','F_2','Location','best'); grid on
+
+subplot(3,1,2)
+stairs(tmin,d','LineWidth',1.2)
+ylabel('[cm^3/s]'); title('Disturbance flows d = [F_3; F_4]')
+legend('F_3','F_4','Location','best'); grid on
+
+subplot(3,1,3)
+plot(tmin,y','LineWidth',1.2)
+xlabel('time [min]'); ylabel('[cm]'); title('Measured levels y = [h_1; h_2]')
+legend('h_1','h_2','Location','best'); grid on
+
+%% Save figure to problem_2_4/plots
+plotdir = fullfile(here,'plots');
+if ~exist(plotdir,'dir')
+    mkdir(plotdir)
+end
+try, theme(gcf,'light'), catch, end   % report figures on white (R2025a+)
+exportgraphics(gcf,fullfile(plotdir,'sim_2_1_deterministic.png'),'Resolution',150)
+exportgraphics(gcf,fullfile(plotdir,'sim_2_1_deterministic.pdf'),'ContentType','vector')
