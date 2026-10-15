@@ -224,7 +224,7 @@ end
 %% Lecture 03B - slide 6: Multivariate Standard Wiener Process
 function [W,Tw,dW] = StdWienerProcess(T,N,nW,Ns,seed)
 
-    if nargin == 4
+    if nargin == 5
         rng(seed);
     end
 
@@ -267,7 +267,7 @@ function [x,f,J] = SDENewtonSolver_L03B(ffun,t,dt,psi,xinit,tol,maxit,varargin)
     [f,J] = feval(ffun,t,x,varargin{:});
     R = x - f*dt - psi;
 
-    it = 1;-
+    it = 1;
 
     while ((norm(R,'inf') > tol) && (it <= maxit))
         dRdx = I - J*dt;
