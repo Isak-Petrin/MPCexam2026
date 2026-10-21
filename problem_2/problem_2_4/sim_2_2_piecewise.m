@@ -32,18 +32,30 @@ u = [repelem(U,1,60/Ts) U(:,end)];
 
 % Nominal (mean) disturbance with a step in F3 after 10 min  (CHOICE)
 dnom = repmat(ds,1,N);
-dnom(1, t >= 10*60) = ds(1) + 50;
+%dnom(1, t >= 10*60) = ds(1) + 50;
 
-%% Noise realizations
+%% Disturbances: d_i = [d_i(t_1) ... d_i(t_N)]' ~ N(mu_i, R_d),  R_d in R^{N x N}
 rng(seed);
 
-Lq = chol(Rdd,'lower');
-w  = Lq*randn(2,N);          % disturbance noise, one draw per sampling interval
+ell = 2*60;                          % correlation length of R_d [s]  (CHOICE)
+[T1,T2] = meshgrid(t,t);
+K = eye(N);                          % N x N identity -> independent samples in time    % N x N temporal correlation (squared exponential)
 
-Lr = chol(Rvv,'lower');
-v  = Lr*randn(ny,N);         % measurement noise
+d = zeros(2,N);
+for i = 1:2
+    mu_i = dnom(i,:)';               % mean vector mu in R^N
+    Rd_i = Rdd(i,i)*K;               % covariance R_d in R^{N x N}
+    % Factor R_d = L*L'. chol() fails here: the SE kernel is numerically singular.
+    [V,D] = eig((Rd_i+Rd_i')/2);
+    Ld = V*diag(sqrt(max(diag(D),0)));
+    d(i,:) = (mu_i + Ld*randn(N,1))';    % one draw of the whole vector d_i
+end
+w = d - dnom;                        % deviation from mean (kept for reference)
 
-d = dnom + w;                % realized piecewise constant disturbance d_k
+%% Measurement noise
+vscale = 20
+Lr = chol(vscale * Rvv,'lower');
+v  = Lr*randn(ny,N);           % realized piecewise constant disturbance d_k
 
 %% Simulation: ode15s over each sampling interval, d_k held constant
 x = zeros(nx,N);
@@ -65,7 +77,7 @@ for k = 1:N-1
 end
 
 y(:,N) = QuadrupleTankSensor(x(:,N),p) + v(:,N);
-z(:,N) = QuadrupleTankOutput(x(:,N),p);
+z(:,N) = QuadrupleTankOutput(x(:,N),p) + v(1:2,N);
 
 h = x./(rho*At);   % true levels [cm]
 

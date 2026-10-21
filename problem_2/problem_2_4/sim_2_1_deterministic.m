@@ -31,7 +31,7 @@ u = [repelem(U,1,60/Ts) U(:,end)];   % hold each value for 60 s -> 2 x N
 
 % Disturbances: nominal values with a step in F3 after 10 min  (CHOICE)
 d = repmat(ds,1,N);
-d(1, t >= 10*60) = ds(1) + 50;
+% d(1, t >= 10*60) = ds(1) + 50;
 
 %% Simulation: ode15s over each sampling interval
 x = zeros(nx,N);

@@ -26,7 +26,7 @@ At = [A1; A2; A3; A4];
 
 %% Operating point  (CHOICE)
 us = [300; 300];   % [cm^3/s] nominal pump flows F1, F2  (Week 2 slide 35)
-ds = [ 50;  50];   % [cm^3/s] nominal disturbance flows F3, F4
+ds = [ 100;  80];   % [cm^3/s] nominal disturbance flows F3, F4
 
 % Closed-form steady state (no toolbox needed). At steady state the
 % outflow of each tank equals its total inflow and qout_i = a_i*sqrt(2*g*h_i),
