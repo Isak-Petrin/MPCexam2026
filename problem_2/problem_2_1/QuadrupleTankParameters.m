@@ -32,10 +32,12 @@ ds = [ 100;  80];   % [cm^3/s] nominal disturbance flows F3, F4
 % outflow of each tank equals its total inflow and qout_i = a_i*sqrt(2*g*h_i),
 % so h_i = (qout_i/a_i)^2/(2*g) and m_i = rho*A_i*h_i.
 qs = zeros(4,1);
+
 qs(3) = (1-gamma2)*us(2) + ds(1);      % tank 3: (1-gamma2)*F2 + F3
 qs(4) = (1-gamma1)*us(1) + ds(2);      % tank 4: (1-gamma1)*F1 + F4
 qs(1) = gamma1*us(1) + qs(3);          % tank 1: gamma1*F1 + outflow of tank 3
 qs(2) = gamma2*us(2) + qs(4);          % tank 2: gamma2*F2 + outflow of tank 4
+
 hs = (qs./ap).^2/(2*g);               % [cm]
 xs = rho*At.*hs;                       % [g]
 

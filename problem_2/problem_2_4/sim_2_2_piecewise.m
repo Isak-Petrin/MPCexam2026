@@ -30,9 +30,11 @@ F2 = [285 301 295 313 314 316 289 278 302 293 ...
 U = [F1; F2];
 u = [repelem(U,1,60/Ts) U(:,end)];
 
+rng(seed);
+
 % Nominal (mean) disturbance with a step in F3 after 10 min  (CHOICE)
 dnom = repmat(ds,1,N);
-%dnom(1, t >= 10*60) = ds(1) + 50;
+%dnom(1, t >= 10*60) = ds(1) + 50; %STEP INCREASE
 
 %% Disturbances: d_i = [d_i(t_1) ... d_i(t_N)]' ~ N(mu_i, R_d),  R_d in R^{N x N}
 rng(seed);

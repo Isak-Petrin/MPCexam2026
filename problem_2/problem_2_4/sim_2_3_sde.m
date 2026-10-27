@@ -19,10 +19,11 @@ N      = length(t);
 
 nsub = 10;          % Euler-Maruyama sub-steps per sampling interval
 
-nx = 4;
-ny = 2;
-nz = 2;
-nw = 2;             % Wiener processes: one for F3, one for F4
+nx = 4;  % Number of states
+ny = 2;  % Number of measurements
+nz = 2;  % Number of controlled outputs
+
+nw = 2;  % Two independent Wiener processes: B1 and B2
 
 %% Piecewise constant input sequences (same as sim_2_1_deterministic)
 F1 = [330 235 295 303 242 292 300 243 325 324 ...
@@ -34,10 +35,14 @@ F2 = [285 301 295 313 314 316 289 278 302 293 ...
 U = [F1; F2];
 u = [repelem(U,1,60/Ts) U(:,end)];
 
-% Mean disturbance with a step in F3 after 10 min (CHOICE).
-% The fluctuations around the mean come from sigma*dw in the SDE.
-d = repmat(ds,1,N);
-d(1, t >= 10*60) = ds(1) + 50;
+% No deterministic disturbance flows in the SDE drift.
+% Stochastic forcing is introduced through Sigma*dW.
+d = zeros(2,N);
+
+% In case we want deterministic step incrase later:
+% Mean disturbance with a step in F3 after 10 min
+% d = repmat(ds,1,N);
+% d(1, t >= 10*60) = ds(1) + 50;
 
 %% Wiener process for the whole horizon (nw channels, one realization)
 [W,Tw,~] = StdWienerProcess(tfinal,(N-1)*nsub,nw,1,seed);   % W: nw x ((N-1)*nsub+1)
@@ -47,12 +52,32 @@ Lr = chol(Rvv,'lower');
 v  = Lr*randn(ny,N);
 
 %% Simulation: Euler-Maruyama over each sampling interval
-psde = [p; sigma];   % p(13:14) = sigma3, sigma4 for QuadrupleTankDiffusion
+psde = [p; sigma];   % psde(13:14) = sigma_F3, sigma_F4 for QuadrupleTankDiffusion
 
 x = zeros(nx,N);
 y = zeros(ny,N);
 z = zeros(nz,N);
-x(:,1) = xs;
+%  x(:,1) = xs; this used the initial state from models 1 and 2 - but xs is not the same
+% for the SDE model as disturbances are removed from deterministic drift and enter through diffusion
+
+
+%computing new steady state
+% Use nominal pump flows and zero deterministic disturbances
+dSDE = zeros(2,1);
+
+u0 = u(:,1);
+
+
+qsSDE = zeros(4,1);
+qsSDE(3) = (1-gamma2)*u0(2);
+qsSDE(4) = (1-gamma1)*u0(1);
+qsSDE(1) = gamma1*u0(1) + qsSDE(3);
+qsSDE(2) = gamma2*u0(2) + qsSDE(4);
+
+hsSDE = (qsSDE./ap).^2/(2*g);
+xsSDE = rho*At.*hsSDE;
+
+x(:,1) = xsSDE;
 
 for k = 1:N-1
     y(:,k) = QuadrupleTankSensor(x(:,k),p) + v(:,k);   % y = g(x,p) + v
@@ -75,43 +100,45 @@ z(:,N) = QuadrupleTankOutput(x(:,N),p);
 
 h = x./(rho*At);   % true levels [cm]
 
-%% Plots: inputs and mean disturbances
-figure('Name','2.3 inputs');
-subplot(2,2,1)
-stairs(tmin,u(1,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_1 [cm^3/s]'); title('Pump flow F_1'); grid on
-subplot(2,2,2)
-stairs(tmin,u(2,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_2 [cm^3/s]'); title('Pump flow F_2'); grid on
-subplot(2,2,3)
-stairs(tmin,d(1,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_3 [cm^3/s]'); title('Mean disturbance F_3'); grid on
-subplot(2,2,4)
-stairs(tmin,d(2,:),'LineWidth',1.5)
-xlabel('time [min]'); ylabel('F_4 [cm^3/s]'); title('Mean disturbance F_4'); grid on
 
-%% Plots: outputs, noisy measurement vs true level
-figure('Name','2.3 outputs');
-subplot(2,2,1)
-plot(tmin,h(3,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_3 [cm]'); title('Tank 3 (unmeasured)'); grid on
-subplot(2,2,2)
-plot(tmin,h(4,:),'LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_4 [cm]'); title('Tank 4 (unmeasured)'); grid on
-subplot(2,2,3)
-plot(tmin,y(1,:),'-',tmin,h(1,:),'--','LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_1 [cm]'); title('Tank 1')
-legend('Noisy measurement y_1','True level','Location','best'); grid on
-subplot(2,2,4)
-plot(tmin,y(2,:),'-',tmin,h(2,:),'--','LineWidth',1.2)
-xlabel('time [min]'); ylabel('h_2 [cm]'); title('Tank 2')
-legend('Noisy measurement y_2','True level','Location','best'); grid on
+%% Plots: Brownian motions and measured vs. true tank levels
+figure('Name','2.3 SDE: Brownian motions and tank levels');
 
-%% Save figure to problem_2_4/plots
+% Top: Two independent Brownian motions
+subplot(2,1,1)
+plot(Tw/60, W(1,:), 'LineWidth',1.2)
+hold on
+plot(Tw/60, W(2,:), 'LineWidth',1.2)
+xlabel('Time [min]')
+ylabel('W(t)')
+title('Standard Wiener Processes')
+legend('B_1(t)','B_2(t)','Location','best')
+grid on
+
+% Bottom: Measured and true levels for tanks 1 and 2
+subplot(2,1,2)
+plot(tmin, y(1,:), '-', 'LineWidth',1.2)
+hold on
+plot(tmin, h(1,:), '--', 'LineWidth',1.2)
+plot(tmin, y(2,:), '-', 'LineWidth',1.2)
+plot(tmin, h(2,:), '--', 'LineWidth',1.2)
+xlabel('Time [min]')
+ylabel('Liquid level [cm]')
+title('Measured and True Tank Levels')
+legend('Measured h_1','True h_1', ...
+       'Measured h_2','True h_2','Location','best')
+grid on
+
+%% Save figure
 plotdir = fullfile(here,'plots');
 if ~exist(plotdir,'dir')
     mkdir(plotdir)
 end
-try, theme(gcf,'light'), catch, end   % report figures on white (R2025a+)
-exportgraphics(gcf,fullfile(plotdir,'sim_2_3_sde.png'),'Resolution',150)
-exportgraphics(gcf,fullfile(plotdir,'sim_2_3_sde.pdf'),'ContentType','vector')
+
+try, theme(gcf,'light'), catch, end
+exportgraphics(gcf, ...
+    fullfile(plotdir,'sim_2_3_sde.png'), ...
+    'Resolution',150)
+exportgraphics(gcf, ...
+    fullfile(plotdir,'sim_2_3_sde.pdf'), ...
+    'ContentType','vector')
