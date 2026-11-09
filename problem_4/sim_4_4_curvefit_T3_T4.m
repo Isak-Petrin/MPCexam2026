@@ -132,35 +132,39 @@ fprintf('\nIdentified model (+%.0f%% step):\n',100*stepPct(jId));
 fprintf('  K  = [%.4f %.4f; %.4f %.4f]  [cm/(cm^3/s)]\n',Kid(1,1),Kid(1,2),Kid(2,1),Kid(2,2));
 fprintf('  T1 = %.1f s, T2 = %.1f s, T3 = %.1f s, T4 = %.1f s\n',Tid);
 
-%% Figure: data vs fitted model and residuals (+10 % step)
+%% Figures: data vs fitted model and residuals (+10 % step), one per T
 cols = [0.00 0.45 0.74; 0.85 0.33 0.10];
-fig1 = figure('Name','4.4 curve fit T3 and T4','Position',[100 100 950 600]);
+fitCase = struct( ...
+    'y',   {S{2,jId}(1,:),                 S{1,jId}(2,:)}, ...
+    'yf',  {fit12{jId},                    fit21{jId}}, ...
+    'K',   {Kid(1,2),                      Kid(2,1)}, ...
+    'T',   {Tid(3),                        Tid(4)}, ...
+    'n',   {3,                             4}, ...
+    'Kn',  {'12',                          '21'}, ...
+    'yl',  {'\Deltah_1/\DeltaF_2  [cm/(cm^3/s)]', '\Deltah_2/\DeltaF_1  [cm/(cm^3/s)]'});
+figFit = gobjects(1,2);
+for c = 1:2
+    fc = fitCase(c);
+    figFit(c) = figure('Name',sprintf('4.4 curve fit T%d',fc.n),'Position',[100+50*c 100 620 460]);
+    tl = tiledlayout(3,1,'TileSpacing','compact');
 
-subplot(2,2,1)
-plot(tmin,S{2,jId}(1,:),'o','Color',cols(1,:),'MarkerSize',4); hold on
-plot(tmin,fit12{jId},'-','Color',cols(2,:),'LineWidth',1.4); hold off
-grid on; box on; xlim(tmin([1 end]))
-ylabel('\Deltah_1/\DeltaF_2  [cm/(cm^3/s)]')
-title(sprintf('S_{12}: \\hat{T}_3 = %.1f s',Tid(3)))
-legend('nonlinear simulation','fitted model','Location','southeast')
+    nexttile([2 1])
+    plot(tmin,fc.y,'o','Color',cols(1,:),'MarkerSize',4); hold on
+    plot(tmin,fc.yf,'-','Color',cols(2,:),'LineWidth',1.6)
+    yline(fc.K,'k--','LineWidth',0.8); hold off
+    grid on; box on; xlim(tmin([1 end]))
+    ylabel(fc.yl)
+    title(sprintf('Curve fit of S_{%s}: T_%d',fc.Kn,fc.n))
+    legend('nonlinear simulation (+10%)', ...
+           sprintf('fitted model, T_%d = %.1f s',fc.n,fc.T), ...
+           sprintf('K_{%s} = %.4f',fc.Kn,fc.K),'Location','southeast')
+    set(gca,'XTickLabel',[])
 
-subplot(2,2,2)
-plot(tmin,S{1,jId}(2,:),'o','Color',cols(1,:),'MarkerSize',4); hold on
-plot(tmin,fit21{jId},'-','Color',cols(2,:),'LineWidth',1.4); hold off
-grid on; box on; xlim(tmin([1 end]))
-ylabel('\Deltah_2/\DeltaF_1  [cm/(cm^3/s)]')
-title(sprintf('S_{21}: \\hat{T}_4 = %.1f s',Tid(4)))
-legend('nonlinear simulation','fitted model','Location','southeast')
-
-subplot(2,2,3)
-plot(tmin,S{2,jId}(1,:) - fit12{jId},'k-','LineWidth',1.0)
-grid on; box on; xlim(tmin([1 end]))
-xlabel('time [min]'); ylabel('residual')
-
-subplot(2,2,4)
-plot(tmin,S{1,jId}(2,:) - fit21{jId},'k-','LineWidth',1.0)
-grid on; box on; xlim(tmin([1 end]))
-xlabel('time [min]'); ylabel('residual')
+    nexttile
+    plot(tmin,(fc.y - fc.yf)*1e5,'k-','LineWidth',1.0)
+    grid on; box on; xlim(tmin([1 end]))
+    xlabel('time [min]'); ylabel('residual [10^{-5}]')
+end
 
 %% Figure: identified model vs simulation, all four channels (+10 % step)
 fig2 = figure('Name','4.4 identified model vs simulation','Position',[150 100 950 600]);
@@ -188,8 +192,8 @@ save(fullfile(datadir,'tf_identification.mat'), ...
 
 plotdir = fullfile(here,'plots');
 if ~exist(plotdir,'dir'), mkdir(plotdir), end
-figs  = [fig1 fig2];
-names = {'sim_4_4_curvefit_T3_T4','sim_4_4_identified_model'};
+figs  = [figFit fig2];
+names = {'sim_4_4_curvefit_T3','sim_4_4_curvefit_T4','sim_4_4_identified_model'};
 for k = 1:numel(figs)
     try, theme(figs(k),'light'), catch, end
     exportgraphics(figs(k),fullfile(plotdir,[names{k} '.png']),'Resolution',150)
