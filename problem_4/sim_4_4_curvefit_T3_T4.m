@@ -195,7 +195,7 @@ if ~exist(plotdir,'dir'), mkdir(plotdir), end
 figs  = [figFit fig2];
 names = {'sim_4_4_curvefit_T3','sim_4_4_curvefit_T4','sim_4_4_identified_model'};
 for k = 1:numel(figs)
-    try, theme(figs(k),'light'), catch, end
+    try theme(figs(k),'light'), catch, end
     exportgraphics(figs(k),fullfile(plotdir,[names{k} '.png']),'Resolution',150)
     exportgraphics(figs(k),fullfile(plotdir,[names{k} '.pdf']),'ContentType','vector')
 end
