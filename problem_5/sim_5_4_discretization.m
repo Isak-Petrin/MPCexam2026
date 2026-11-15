@@ -7,7 +7,7 @@
 %   piecewise constant d_k  as above with D_k ~ N(0,Rdd), v_k ~ N(0,Rvv)
 %   SDE                     as above with w_k ~ N(0,Qd),  v_k ~ N(0,Rvv)
 %
-% The result is verified against c2d, against exp(-Ts/T_i) and by a
+% The result is verified by numerical quadrature, against exp(-Ts/T_i) and by a
 % continuous vs. discrete step response. Everything is saved to
 % data/linear_models.mat for Problems 5.5, 6 and 8-11.
 
@@ -86,11 +86,11 @@ disp('Qd (SDE) =');           disp(Qd)
 disp('Ed*Rdd*Ed'' (2.2) =');  disp(Qdd)
 
 %% Verification
-% 1) against Matlab's built-in ZOH discretization
-sysc = ss(A,[B E],Cz,0);
-sysd = c2d(sysc,Ts,'zoh');
-fprintf('c2d check: max|Ad-Ad_c2d| = %.1e, max|[Bd Ed]-B_c2d| = %.1e, max|Ad-Ad_VanLoan| = %.1e\n', ...
-        max(abs(Ad-sysd.A),[],'all'), max(abs([Bd Ed]-sysd.B),[],'all'), max(abs(Ad-AdVL),[],'all'));
+% 1) against direct numerical integration of (5.x) (no toolbox needed)
+Gam = integral(@(s) expm(A*s), 0, Ts, 'ArrayValued', true);   % int_0^Ts e^{As} ds
+QdI = integral(@(s) expm(A*s)*(G*G')*expm(A'*s), 0, Ts, 'ArrayValued', true);
+fprintf('Quadrature check: max|[Bd Ed]-Gam*[B E]| = %.1e, max|Qd-QdI| = %.1e, max|Ad-Ad_VanLoan| = %.1e\n', ...
+        max(abs([Bd Ed]-Gam*[B E]),[],'all'), max(abs(Qd-QdI),[],'all'), max(abs(Ad-AdVL),[],'all'));
 
 % 2) eigenvalues of Ad equal exp(-Ts/T_i)
 lam = sort(eig(Ad));
@@ -117,8 +117,9 @@ Zc = cell(1,2); Zk = cell(1,2);
 for i = 1:2
     U = zeros(2,1); U(i) = 0.10*us(i);
 
-    % continuous: lsim with constant input
-    Zc{i} = lsim(ss(A,B,Cz,0), repmat(U',length(tc),1), tc)';
+    % continuous: integrate Xdot = A X + B U with ode45 (constant input)
+    [~,Xc] = ode45(@(tt,xx) A*xx + B*U, tc, zeros(nx,1), odeset('RelTol',1e-10,'AbsTol',1e-10));
+    Zc{i}  = Cz*Xc';
 
     % discrete: the recursion X_{k+1} = Ad X_k + Bd U_k
     X = zeros(nx,1); Zk{i} = zeros(nz,Nk);
