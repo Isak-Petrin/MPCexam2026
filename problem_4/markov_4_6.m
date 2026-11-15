@@ -1,5 +1,5 @@
 
-%% Problem 4.6 - Observer canonical realization and discretization
+%% Problem 4.6 - Observer canonical realization, discretization and Markov parameters
 % Uses the identified +10% model from Problem 4.4.
 % Discretization using exact zero-order hold (block matrix exponential).
 
@@ -8,7 +8,8 @@ format long g
 
 %% Settings
 
-Ts = 10;  % Sample time [s]
+Ts = 10;          % Sample time [s]
+N_H = 101;         % Number of Markov parameter matrices (H0 to H10)
 
 %% Retrieve identified model from Problem 4.4
 
@@ -111,9 +112,60 @@ systems.K = Kid;
 systems.T = Tid;
 systems.Ts = Ts;
 
+%% Compute the first 10 MIMO Markov parameter matrices
+
+% Mapping of the four SISO systems into the MIMO system
+names = {'G11', 'G12';
+         'G21', 'G22'};
+
+% Initialize H0, H1, ..., H9
+H = zeros(2,2,N_H);
+
+for i = 1:2
+    for j = 1:2
+
+        % Retrieve corresponding discrete SISO realization
+        sys = systems.(names{i,j});
+
+        % H0 = D
+        H(i,j,1) = sys.Dd;
+
+        % Compute Hk = C*A^(k-1)*B, k = 1,...,9
+        v = sys.Bd;
+
+        for k = 1:N_H-1
+
+            H(i,j,k+1) = sys.Cd*v;
+
+            v = sys.Ad*v;
+
+        end
+
+    end
+end
+
+%% Print MIMO Markov parameter matrices
+
+fprintf('\n============================================\n');
+fprintf('MIMO MARKOV PARAMETERS\n');
+fprintf('============================================\n');
+
+for k = 0:N_H-1
+
+    fprintf('\nH_%d =\n',k);
+    disp(H(:,:,k+1));
+
+end
+
+%% Store Markov parameters
+
+systems.H = H;
+
 fprintf('\n============================================\n');
 fprintf('PROBLEM 4.6 COMPLETED\n');
 fprintf('============================================\n');
+
+%% Local functions
 
 %% Observer canonical realization
 
@@ -174,52 +226,3 @@ function [Ad,Bd,Cd,Dd] = discretizeZOH(Ac,Bc,Cc,Dc,Ts)
     Dd = Dc;
 
 end
-
-
-systems.Ts = Ts;
-
-
-%% Compute MIMO Markov parameters H0, H1 and H2
-
-% Mapping of the four SISO systems into the MIMO system
-names = {'G11', 'G12';
-         'G21', 'G22'};
-
-% Initialize MIMO Markov parameter matrices
-H = zeros(2,2,3);
-
-for i = 1:2
-    for j = 1:2
-
-        % Retrieve corresponding discrete SISO realization
-        sys = systems.(names{i,j});
-
-        % H0 = D
-        H(i,j,1) = sys.Dd;
-
-        % H1 = C*B
-        H(i,j,2) = sys.Cd * sys.Bd;
-
-        % H2 = C*A*B
-        H(i,j,3) = sys.Cd * sys.Ad * sys.Bd;
-
-    end
-end
-
-%% Print MIMO Markov parameters
-
-fprintf('\n============================================\n');
-fprintf('MIMO MARKOV PARAMETERS\n');
-fprintf('============================================\n');
-
-fprintf('\nH_0 =\n');
-disp(H(:,:,1));
-
-fprintf('\nH_1 =\n');
-disp(H(:,:,2));
-
-fprintf('\nH_2 =\n');
-disp(H(:,:,3));
-
-% Store Markov parameters
-systems.H = H;
